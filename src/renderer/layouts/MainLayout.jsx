@@ -76,18 +76,12 @@ export default function MainLayout() {
       {/* Header amélioré */}
       <header className="h-9 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-4 text-sm">
         <div className="flex items-center gap-4">
-          <span className="font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            CodeEditor
-          </span>
+          
           
           <div className="flex items-center gap-3 text-xs text-gray-400">
-            <span>Fichier</span>
-            <span>Édition</span>
-            <span>Affichage</span>
             <span>Go</span>
             <span>Exécuter</span>
             <span>Terminal</span>
-            <span>Aide</span>
           </div>
         </div>
 

@@ -28,14 +28,7 @@ export default function Sidebar({ onOpenFolder, onNewFile, onSettings }) {
   return (
     <div className="w-16 h-full flex flex-col items-center bg-gradient-to-b from-gray-900 to-gray-800 border-r border-gray-700 py-6">
       <div className="flex flex-col items-center gap-6">
-        {/* Logo / Brand */}
-        <div className="mb-4 flex flex-col items-center">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mb-1">
-            <Zap size={18} className="text-white" />
-          </div>
-          <span className="text-xs font-semibold text-gray-300">CodeZap</span>
-        </div>
-
+      
         {/* Actions principales */}
         <div className="flex flex-col gap-4">
           <button
@@ -66,22 +59,6 @@ export default function Sidebar({ onOpenFolder, onNewFile, onSettings }) {
             <FileText size={22} />
             <span className="text-xs mt-1">Nouveau</span>
           </button>
-
-          <button
-            onClick={() => {
-              handleButtonClick('create');
-              // Fonctionnalité pour créer un nouveau dossier
-            }}
-            className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200 ${
-              activeButton === 'create' 
-                ? 'bg-yellow-600 text-white shadow-lg transform scale-105' 
-                : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-            }`}
-            title="Créer un dossier"
-          >
-            <FolderPlus size={22} />
-            <span className="text-xs mt-1">Dossier</span>
-          </button>
         </div>
 
         <div className="w-8 h-px bg-gray-700 my-2"></div>
@@ -102,22 +79,6 @@ export default function Sidebar({ onOpenFolder, onNewFile, onSettings }) {
           >
             <Palette size={20} />
             <span className="text-xs mt-1">Thème</span>
-          </button>
-
-          <button
-            onClick={() => {
-              handleButtonClick('settings');
-              onSettings && onSettings();
-            }}
-            className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200 ${
-              activeButton === 'settings' 
-                ? 'bg-gray-600 text-white shadow-lg transform scale-105' 
-                : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-            }`}
-            title="Paramètres"
-          >
-            <Settings size={20} />
-            <span className="text-xs mt-1">Réglages</span>
           </button>
         </div>
       </div>

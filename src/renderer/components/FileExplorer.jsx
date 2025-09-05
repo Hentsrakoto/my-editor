@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { 
   Folder, 
   FolderOpen, 
@@ -14,29 +14,110 @@ import {
   Search,
   RefreshCw,
   FolderPlus,
-  FilePlus
+  FilePlus,
+  Copy,
+  Scissors,
+  Clipboard
 } from "lucide-react";
 
 // Composant récursif pour les dossiers
-function FolderNode({ path, name, onOpenFile, level = 0 }) {
+function FolderNode({ 
+  path, 
+  name, 
+  onOpenFile, 
+  level = 0, 
+  onCreateItem,
+  onDeleteItem,
+  onRenameItem,
+  clipboardData,
+  onCopy,
+  onCut,
+  onPaste,
+  refreshTrigger 
+}) {
   const [entries, setEntries] = useState([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [isFile, setIsFile] = useState(true);
+  const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0 });
+
+  const loadEntries = useCallback(async () => {
+    setLoading(true);
+    try {
+      const dirEntries = await window.api.readDir(path);
+      setEntries(dirEntries);
+    } catch (error) {
+      console.error("Erreur lors de la lecture du dossier:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [path]);
+
+  useEffect(() => {
+    if (open) {
+      loadEntries();
+    }
+  }, [open, loadEntries, refreshTrigger]);
 
   const toggle = async () => {
-    if (!open) {
-      setLoading(true);
-      try {
-        const dirEntries = await window.api.readDir(path);
-        setEntries(dirEntries);
-      } catch (error) {
-        console.error("Erreur lors de la lecture du dossier:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
     setOpen(!open);
   };
+
+  const handleCreateItem = (isFileType) => {
+    setIsCreating(true);
+    setIsFile(isFileType);
+    setNewName(isFileType ? "nouveau_fichier.txt" : "nouveau_dossier");
+  };
+
+  const confirmCreate = async () => {
+    if (newName.trim()) {
+      const fullPath = `${path}/${newName}`;
+      try {
+        if (isFile) {
+          await window.api.writeFile(fullPath, "");
+        } else {
+          await window.api.mkdir(fullPath);
+        }
+        setIsCreating(false);
+        setNewName("");
+        loadEntries(); // Rafraîchir la liste
+        onCreateItem && onCreateItem(fullPath);
+      } catch (error) {
+        console.error("Erreur lors de la création:", error);
+      }
+    }
+  };
+
+  const cancelCreate = () => {
+    setIsCreating(false);
+    setNewName("");
+  };
+
+  const handleContextMenu = (e, isDirectory, itemPath, itemName) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      isDirectory,
+      itemPath,
+      itemName
+    });
+  };
+
+  const closeContextMenu = () => {
+    setContextMenu({ visible: false, x: 0, y: 0 });
+  };
+
+  useEffect(() => {
+    document.addEventListener('click', closeContextMenu);
+    return () => {
+      document.removeEventListener('click', closeContextMenu);
+    };
+  }, []);
 
   const getFileIcon = (fileName) => {
     const extension = fileName.split('.').pop().toLowerCase();
@@ -68,6 +149,7 @@ function FolderNode({ path, name, onOpenFile, level = 0 }) {
     <div className={`pl-${level * 2}`}>
       <div
         onClick={toggle}
+        onContextMenu={(e) => handleContextMenu(e, true, path, name)}
         className="flex items-center gap-1 cursor-pointer font-medium text-gray-200 hover:bg-gray-700 px-2 py-1 rounded transition-colors duration-150 group"
       >
         {loading ? (
@@ -91,6 +173,27 @@ function FolderNode({ path, name, onOpenFile, level = 0 }) {
 
       {open && (
         <div className="ml-3 border-l border-gray-700 pl-1">
+          {isCreating && (
+            <div className="flex items-center gap-1 pl-5 text-gray-300 px-2 py-1">
+              {isFile ? 
+                <FileText size={14} className="text-gray-400" /> : 
+                <Folder size={14} className="text-yellow-500" />
+              }
+              <input
+                autoFocus
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onBlur={cancelCreate}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') confirmCreate();
+                  if (e.key === 'Escape') cancelCreate();
+                }}
+                className="bg-gray-800 border border-gray-600 rounded px-1 py-0.5 text-sm w-full"
+              />
+            </div>
+          )}
+          
           {entries.map((e) => {
             const fullPath = `${path}/${e.name}`;
             if (e.isDir) {
@@ -101,6 +204,14 @@ function FolderNode({ path, name, onOpenFile, level = 0 }) {
                   name={e.name}
                   onOpenFile={onOpenFile}
                   level={level + 1}
+                  onCreateItem={onCreateItem}
+                  onDeleteItem={onDeleteItem}
+                  onRenameItem={onRenameItem}
+                  clipboardData={clipboardData}
+                  onCopy={onCopy}
+                  onCut={onCut}
+                  onPaste={onPaste}
+                  refreshTrigger={refreshTrigger}
                 />
               );
             }
@@ -108,6 +219,7 @@ function FolderNode({ path, name, onOpenFile, level = 0 }) {
               <div
                 key={fullPath}
                 onClick={() => onOpenFile(fullPath)}
+                onContextMenu={(e) => handleContextMenu(e, false, fullPath, e.name)}
                 className="flex items-center gap-1 pl-5 cursor-pointer text-gray-300 hover:bg-gray-700 px-2 py-1 rounded transition-colors duration-150 group"
               >
                 {getFileIcon(e.name)}
@@ -118,6 +230,56 @@ function FolderNode({ path, name, onOpenFile, level = 0 }) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {contextMenu.visible && (
+        <div 
+          className="fixed bg-gray-800 border border-gray-700 rounded shadow-lg py-1 z-10"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+        >
+          <div 
+            className="px-3 py-1 hover:bg-gray-700 cursor-pointer flex items-center gap-2"
+            onClick={() => {
+              onCopy && onCopy(contextMenu.itemPath, contextMenu.isDirectory);
+              closeContextMenu();
+            }}
+          >
+            <Copy size={14} /> Copier
+          </div>
+          <div 
+            className="px-3 py-1 hover:bg-gray-700 cursor-pointer flex items-center gap-2"
+            onClick={() => {
+              onCut && onCut(contextMenu.itemPath, contextMenu.isDirectory);
+              closeContextMenu();
+            }}
+          >
+            <Scissors size={14} /> Couper
+          </div>
+          {clipboardData && (
+            <div 
+              className="px-3 py-1 hover:bg-gray-700 cursor-pointer flex items-center gap-2"
+              onClick={() => {
+                onPaste && onPaste(path);
+                closeContextMenu();
+              }}
+            >
+              <Clipboard size={14} /> Coller
+            </div>
+          )}
+          <div className="border-t border-gray-700 my-1"></div>
+          <div 
+            className="px-3 py-1 hover:bg-gray-700 cursor-pointer"
+            onClick={() => handleCreateItem(true)}
+          >
+            Nouveau fichier
+          </div>
+          <div 
+            className="px-3 py-1 hover:bg-gray-700 cursor-pointer"
+            onClick={() => handleCreateItem(false)}
+          >
+            Nouveau dossier
+          </div>
         </div>
       )}
     </div>
@@ -135,6 +297,61 @@ function formatFileSize(bytes) {
 // Composant principal
 export default function FileExplorer({ folder, onOpenFile }) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [clipboardData, setClipboardData] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const handleCreateFile = () => {
+    // Cette fonctionnalité est maintenant gérée dans le context menu
+  };
+
+  const handleCreateFolder = () => {
+    // Cette fonctionnalité est maintenant gérée dans le context menu
+  };
+
+  const handleRefresh = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleCopy = (path, isDirectory) => {
+    setClipboardData({
+      operation: 'copy',
+      sourcePath: path,
+      isDirectory: isDirectory
+    });
+  };
+
+  const handleCut = (path, isDirectory) => {
+    setClipboardData({
+      operation: 'cut',
+      sourcePath: path,
+      isDirectory: isDirectory
+    });
+  };
+
+  const handlePaste = async (destinationPath) => {
+    if (!clipboardData) return;
+
+    try {
+      const sourceName = clipboardData.sourcePath.split('/').pop();
+      const destination = `${destinationPath}/${sourceName}`;
+
+      if (clipboardData.operation === 'copy') {
+        if (clipboardData.isDirectory) {
+          await window.api.copyDir(clipboardData.sourcePath, destination);
+        } else {
+          await window.api.copyFile(clipboardData.sourcePath, destination);
+        }
+      } else if (clipboardData.operation === 'cut') {
+        await window.api.rename(clipboardData.sourcePath, destination);
+        setClipboardData(null); // Clear clipboard after move
+      }
+
+      // Rafraîchir l'explorateur
+      setRefreshTrigger(prev => prev + 1);
+    } catch (error) {
+      console.error("Erreur lors de l'opération:", error);
+    }
+  };
 
   if (!folder) {
     return (
@@ -160,13 +377,25 @@ export default function FileExplorer({ folder, onOpenFile }) {
         <div className="flex items-center justify-between mb-2">
           <h2 className="font-semibold text-gray-200 text-sm">EXPLORATEUR</h2>
           <div className="flex gap-1">
-            <button className="p-1 rounded hover:bg-gray-700 transition" title="Nouveau fichier">
+            <button 
+              className="p-1 rounded hover:bg-gray-700 transition" 
+              title="Nouveau fichier"
+              onClick={handleCreateFile}
+            >
               <FilePlus size={14} />
             </button>
-            <button className="p-1 rounded hover:bg-gray-700 transition" title="Nouveau dossier">
+            <button 
+              className="p-1 rounded hover:bg-gray-700 transition" 
+              title="Nouveau dossier"
+              onClick={handleCreateFolder}
+            >
               <FolderPlus size={14} />
             </button>
-            <button className="p-1 rounded hover:bg-gray-700 transition" title="Actualiser">
+            <button 
+              className="p-1 rounded hover:bg-gray-700 transition" 
+              title="Actualiser"
+              onClick={handleRefresh}
+            >
               <RefreshCw size={14} />
             </button>
           </div>
@@ -194,6 +423,12 @@ export default function FileExplorer({ folder, onOpenFile }) {
           path={folder}
           name={folder.split("/").pop()}
           onOpenFile={onOpenFile}
+          onCreateItem={() => setRefreshTrigger(prev => prev + 1)}
+          clipboardData={clipboardData}
+          onCopy={handleCopy}
+          onCut={handleCut}
+          onPaste={handlePaste}
+          refreshTrigger={refreshTrigger}
         />
       </div>
 
@@ -203,6 +438,15 @@ export default function FileExplorer({ folder, onOpenFile }) {
           <span>Total:</span>
           <span>~ fichiers</span>
         </div>
+        {clipboardData && (
+          <div className="mt-1 flex items-center gap-1">
+            <Clipboard size={10} />
+            <span className="truncate">
+              {clipboardData.operation === 'copy' ? 'Copier : ' : 'Déplacer : '}
+              {clipboardData.sourcePath.split('/').pop()}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
