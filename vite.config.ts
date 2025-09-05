@@ -8,4 +8,7 @@ export default defineConfig({
     outDir: '../../dist',    // build dans dist/ pour Electron
     emptyOutDir: true,
   },
+  css: {
+    postcss: './postcss.config.js',
+  },
 });
