@@ -135,6 +135,13 @@ export default function FolderNode({
             return (
               <div
                 key={fullPath}
+                draggable={true}
+                onDragStart={(ev) => {
+                  // met le chemin dans le dataTransfer sous un type custom
+                  ev.dataTransfer.setData("application/x-myapp-file", fullPath);
+                  // optionnel : set drag image
+                  // const img = document.createElement('img'); img.src = '/icons/file.png'; ev.dataTransfer.setDragImage(img, 10, 10);
+                }}
                 onClick={() => onOpenFile(fullPath)}
                 onContextMenu={(ev) => handleContext(ev, false, fullPath, entry.name)}
                 className={`flex items-center gap-1 pl-5 cursor-pointer text-gray-300 hover:bg-gray-700 px-2 py-1 rounded transition-colors duration-150 group ${isActive ? "bg-gray-900 text-white" : ""}`}

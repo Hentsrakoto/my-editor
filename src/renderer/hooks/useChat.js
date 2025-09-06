@@ -1,9 +1,10 @@
+// src/hooks/useChat.js
 import { useCallback, useRef, useState } from "react";
 
 /**
  * useChat
  * - messages : [{id, sender: 'bot'|'user', text, timestamp}]
- * - sendMessage: gère l'ajout local et l'appel à l'API via une abstraction (window.api / backend)
+ * - sendMessage: gère l'ajout local et l'appel à l'API via sendToApi
  */
 export default function useChat({ initialMessages = [], sendToApi } = {}) {
   const [messages, setMessages] = useState(initialMessages);
@@ -17,12 +18,12 @@ export default function useChat({ initialMessages = [], sendToApi } = {}) {
 
   const sendMessage = useCallback(async (text, contextFiles) => {
     if (!text || !text.trim()) return;
-    // add user message first
+
+    // ajoute d'abord le message utilisateur localement
     addMessage({ text, sender: "user" });
 
     setLoading(true);
     try {
-      // sendToApi is an abstraction injected by container
       const botText = await (sendToApi ? sendToApi(text, contextFiles) : Promise.resolve("No API handler configured."));
       addMessage({ text: botText, sender: "bot" });
       return botText;

@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "start:electron": "cross-env NODE_ENV=development electron .",
+    "start:server": "node src/server/index.js",
+    "dev:all": "concurrently \"npm run start:server\" \"npm run dev\" \"npm run start:electron\"",
     "build:renderer": "vite build",
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
@@ -17,14 +19,19 @@
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "axios": "^1.11.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
     "lucide-react": "^0.542.0",
     "monaco-editor": "^0.52.2",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-markdown": "^10.1.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.0.2",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.1",
     "cross-env": "^10.0.0",
     "electron": "^38.0.0",
     "electron-builder": "^26.0.12",
