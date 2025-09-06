@@ -10,37 +10,58 @@ import useChat from "../hooks/useChat";
  */
 export default function ChatContainer({ contextFiles }) {
 
-  const sendToApi = useCallback(async (message, context) => {
-    // IMPORTANT: never put API key here. Use backend or Electron IPC (window.api).
-    if (window?.api?.chat) {
-      // Electron main process handles the key and calls the remote API
-      return window.api.chat({ message, contextFiles: context });
-    }
+    // ChatContainer.jsx (extrait)
+    const sendToApi = useCallback(async (message, context) => {
+        // Use Electron IPC if available
+        if (window?.api?.chat) {
+            return window.api.chat({ message, contextFiles: context });
+        }
 
-    // Fallback: call your backend endpoint (server holds the secret)
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, contextFiles: context })
-      });
-      const data = await res.json();
-      return data?.reply || "Aucune réponse.";
-    } catch (err) {
-      console.error("ChatContainer API error:", err);
-      throw err;
-    }
-  }, []);
+        try {
+            const res = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message, contextFiles: context })
+            });
 
-  const { messages, loading, sendMessage } = useChat({
-    initialMessages: [{
-      id: 1,
-      text: "Bonjour ! Je suis votre assistant IA. Comment puis-je vous aider aujourd'hui ?",
-      sender: 'bot',
-      timestamp: new Date()
-    }],
-    sendToApi
-  });
+            // Gérer statut non ok
+            if (!res.ok) {
+                const text = await res.text().catch(() => "");
+                throw new Error(`API error ${res.status}: ${text || res.statusText}`);
+            }
 
-  return <ChatView messages={messages} loading={loading} onSend={(text) => sendMessage(text, contextFiles)} />;
+            // Récupérer texte brut (pour éviter JSON.parse sur corps vide)
+            const textBody = await res.text();
+            if (!textBody) throw new Error("Empty response from server");
+
+            // Essayer parser JSON
+            try {
+                const data = JSON.parse(textBody);
+                // data.reply attendu
+                if (data?.reply) return data.reply;
+                // si la structure est différente, essayer d'extraire
+                return data?.choices?.[0]?.message?.content ?? JSON.stringify(data);
+            } catch (e) {
+                // backend a renvoyé texte brut
+                return textBody;
+            }
+        } catch (err) {
+            console.error("ChatContainer API error:", err);
+            // Remonter l'erreur pour useChat qui affichera un message bot d'erreur
+            throw err;
+        }
+    }, []);
+
+
+    const { messages, loading, sendMessage } = useChat({
+        initialMessages: [{
+            id: 1,
+            text: "Bonjour ! Je suis votre assistant IA. Comment puis-je vous aider aujourd'hui ?",
+            sender: 'bot',
+            timestamp: new Date()
+        }],
+        sendToApi
+    });
+
+    return <ChatView messages={messages} loading={loading} onSend={(text) => sendMessage(text, contextFiles)} />;
 }
