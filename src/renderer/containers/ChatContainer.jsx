@@ -106,7 +106,7 @@ export default function ChatContainer({ contextFiles }) {
 
   return (
     <div
-      style={{ position: "relative", height: "100vh" }} // <-- change ici
+      style={{ position: "relative", height: "100%" }} // <-- change ici
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
