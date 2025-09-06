@@ -1,14 +1,13 @@
-import React, { useState } from 'react';
-import { MessageSquare, Terminal } from 'lucide-react';
-import ChatBot from './ChatBot';
-import TerminalComponent from './TerminalComponent';
+import React, { useState } from "react";
+import { MessageSquare, Terminal } from "lucide-react";
+import ChatContainer from "../../containers/ChatContainer";
+import TerminalContainer from "../../containers/TerminalContainer";
 
-const SidebarRight = () => {
-  const [activeTab, setActiveTab] = useState('chat');
+const SidebarRight = ({ contextFiles }) => {
+  const [activeTab, setActiveTab] = useState("chat");
 
   return (
     <div className="w-80 flex flex-col bg-gradient-to-b from-gray-900 to-gray-800 h-full border-l border-gray-700">
-      {/* En-tête avec onglets */}
       <div className="flex border-b border-gray-700 bg-gray-800/90">
         <button
           className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors duration-150 ${
@@ -34,9 +33,8 @@ const SidebarRight = () => {
         </button>
       </div>
 
-      {/* Contenu */}
       <div className="flex-1 overflow-hidden">
-        {activeTab === 'chat' ? <ChatBot /> : <TerminalComponent />}
+        {activeTab === "chat" ? <ChatContainer contextFiles={contextFiles} /> : <TerminalContainer />}
       </div>
     </div>
   );

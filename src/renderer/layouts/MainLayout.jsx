@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
-import Sidebar from "../components/Sidebar";
-import FileExplorer from "../components/FileExplorer";
-import EditorTab from "../components/EditorTab";
-import SidebarRight from "../components/SidebarRight";
-import { 
-  PanelLeft, 
-  ChevronDown, 
-  ChevronRight, 
-  X, 
-  Circle, 
+import SidebarContainer from "../containers/SidebarContainer";
+import FileExplorerContainer from "../containers/FileExplorerContainer";
+import EditorTabContainer from "../containers/EditorTabContainer";
+import SidebarRight from "../components/sidebar/SidebarRight";
+import {
+  PanelLeft,
+  ChevronDown,
+  ChevronRight,
+  X,
+  Circle,
   Zap,
   Square,
   PanelRight
@@ -35,7 +35,7 @@ export default function MainLayout() {
           handleSaveFile();
         }
       }
-      
+
       // Ctrl+O pour ouvrir un dossier
       if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
         e.preventDefault();
@@ -66,7 +66,7 @@ export default function MainLayout() {
     if (currentFile) {
       await window.api.writeFile(currentFile.path, currentFile.content);
       setCurrentFile((f) => ({ ...f, dirty: false }));
-      setFiles(files => files.map(f => 
+      setFiles(files => files.map(f =>
         f.path === currentFile.path ? { ...f, dirty: false } : f
       ));
     }
@@ -106,17 +106,17 @@ export default function MainLayout() {
               {currentFile.path.split('/').pop()}
             </div>
           )}
-          
+
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
               className="p-1 rounded hover:bg-gray-700 transition"
               title="Basculer la barre latérale gauche"
             >
               <PanelLeft size={16} />
             </button>
-            
-            <button 
+
+            <button
               onClick={() => setIsExplorerCollapsed(!isExplorerCollapsed)}
               className="p-1 rounded hover:bg-gray-700 transition"
               title="Basculer l'explorateur"
@@ -125,7 +125,7 @@ export default function MainLayout() {
             </button>
 
             {/* Nouveau bouton pour la sidebar droite */}
-            <button 
+            <button
               onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
               className="p-1 rounded hover:bg-gray-700 transition"
               title="Basculer la barre latérale droite"
@@ -140,23 +140,31 @@ export default function MainLayout() {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar gauche */}
         {!isSidebarCollapsed && (
-          <Sidebar 
-            onOpenFolder={handleOpenFolder} 
+          <SidebarContainer
             onNewFile={handleNewFile}
-            onSettings={handleSettings}
+            onOpenFolder={async () => {
+              // tu peux centraliser la logique ici ou laisser container appeler window.api
+              const folder = await window.api.openFolder();
+              if (folder) {
+                setCurrentFolder(folder);
+                setFiles([]);
+                setCurrentFile(null);
+              }
+              return folder;
+            }}
           />
         )}
 
         {/* Explorateur de fichiers */}
         {!isExplorerCollapsed && currentFolder && (
-          <FileExplorer
+          <FileExplorerContainer
             folder={currentFolder}
-            onOpenFile={async (filePath) => {
-              const content = await window.api.readFile(filePath);
+            onOpenFile={(filePath, content) => {
               const file = { path: filePath, content, dirty: false };
-              setFiles((f) => [...f.filter((x) => x.path !== filePath), file]);
+              setFiles((f) => [...f.filter(x => x.path !== filePath), file]);
               setCurrentFile(file);
             }}
+            currentFilePath={currentFile?.path}
           />
         )}
 
@@ -168,15 +176,14 @@ export default function MainLayout() {
                 <div
                   key={file.path}
                   onClick={() => setCurrentFile(file)}
-                  className={`flex items-center gap-2 px-3 py-2 text-xs border-r border-gray-700 cursor-pointer transition-colors ${
-                    currentFile?.path === file.path
-                      ? "bg-gray-900 text-white"
-                      : "bg-gray-800 text-gray-400 hover:bg-gray-750"
-                  }`}
+                  className={`flex items-center gap-2 px-3 py-2 text-xs border-r border-gray-700 cursor-pointer transition-colors ${currentFile?.path === file.path
+                    ? "bg-gray-900 text-white"
+                    : "bg-gray-800 text-gray-400 hover:bg-gray-750"
+                    }`}
                 >
                   <span className="truncate max-w-xs">{file.path.split("/").pop()}</span>
                   {file.dirty && <Circle size={10} className="text-yellow-400 fill-yellow-400" />}
-                  <button 
+                  <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setFiles(files.filter(f => f.path !== file.path));
@@ -193,20 +200,19 @@ export default function MainLayout() {
             </div>
           )}
 
-          <EditorTab
+          <EditorTabContainer
             file={currentFile}
-            onChange={(updatedContent) => {
+            onChangeFileContent={(updatedContent) => {
               setCurrentFile((f) => ({
                 ...f,
                 content: updatedContent,
                 dirty: true,
               }));
-              setFiles(files => files.map(f => 
+              setFiles(files => files.map(f =>
                 f.path === currentFile.path ? { ...f, content: updatedContent, dirty: true } : f
               ));
             }}
-            onSave={handleSaveFile}
-            onCursorChange={handleCursorChange}
+            onSaveFile={handleSaveFile}
           />
         </div>
 
@@ -221,11 +227,11 @@ export default function MainLayout() {
             <Circle size={10} className="text-green-500 fill-green-500" />
             Mode développement
           </span>
-          
+
           <span>{encoding}</span>
-          
+
           <span>{lineEnding}</span>
-          
+
           <span className="flex items-center gap-1">
             <Zap size={12} />
             JavaScript
@@ -234,13 +240,13 @@ export default function MainLayout() {
 
         <div className="flex items-center gap-4">
           <span>Ligne {cursorPosition.line}, Col {cursorPosition.column}</span>
-          
+
           <span>{currentFile ? currentFile.content.split('\n').length : 0} lignes</span>
-          
+
           <span>Espaces: 2</span>
 
           {/* Indicateur de statut de la sidebar droite */}
-          <button 
+          <button
             onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
             className="text-gray-500 hover:text-blue-400 transition-colors flex items-center"
             title={isRightSidebarCollapsed ? "Afficher la sidebar droite" : "Masquer la sidebar droite"}
