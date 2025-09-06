@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from "react";
-import Sidebar from "../components/Sidebar";
-import FileExplorer from "../components/FileExplorer";
-import EditorTab from "../components/EditorTab";
+import SidebarContainer from "../containers/SidebarContainer";
+import FileExplorerContainer from "../containers/FileExplorerContainer";
+import EditorTabContainer from "../containers/EditorTabContainer";
+import SidebarRight from "../components/sidebar/SidebarRight";
+import {
+  PanelLeft,
+  ChevronDown,
+  ChevronRight,
+  X,
+  Circle,
+  Zap,
+  Square,
+  PanelRight
+} from "lucide-react";
 
 export default function MainLayout() {
   const [currentFolder, setCurrentFolder] = useState(null);
@@ -10,6 +21,7 @@ export default function MainLayout() {
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isExplorerCollapsed, setIsExplorerCollapsed] = useState(false);
+  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
   const [encoding, setEncoding] = useState("UTF-8");
   const [lineEnding, setLineEnding] = useState("LF");
 
@@ -23,17 +35,23 @@ export default function MainLayout() {
           handleSaveFile();
         }
       }
-      
+
       // Ctrl+O pour ouvrir un dossier
       if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
         e.preventDefault();
         handleOpenFolder();
       }
+
+      // Ctrl+B pour basculer la sidebar droite
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault();
+        setIsRightSidebarCollapsed(!isRightSidebarCollapsed);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentFile]);
+  }, [currentFile, isRightSidebarCollapsed]);
 
   const handleOpenFolder = async () => {
     const folder = await window.api.openFolder();
@@ -48,7 +66,7 @@ export default function MainLayout() {
     if (currentFile) {
       await window.api.writeFile(currentFile.path, currentFile.content);
       setCurrentFile((f) => ({ ...f, dirty: false }));
-      setFiles(files => files.map(f => 
+      setFiles(files => files.map(f =>
         f.path === currentFile.path ? { ...f, dirty: false } : f
       ));
     }
@@ -59,7 +77,6 @@ export default function MainLayout() {
   };
 
   const handleNewFile = () => {
-    // Implémentation pour créer un nouveau fichier
     const newFilePath = currentFolder ? `${currentFolder}/nouveau-fichier.js` : 'nouveau-fichier.js';
     const newFile = { path: newFilePath, content: '// Nouveau fichier', dirty: true };
     setFiles((f) => [...f, newFile]);
@@ -67,7 +84,6 @@ export default function MainLayout() {
   };
 
   const handleSettings = () => {
-    // Ouvrir les paramètres
     console.log("Ouvrir les paramètres");
   };
 
@@ -76,8 +92,6 @@ export default function MainLayout() {
       {/* Header amélioré */}
       <header className="h-9 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-4 text-sm">
         <div className="flex items-center gap-4">
-          
-          
           <div className="flex items-center gap-3 text-xs text-gray-400">
             <span>Go</span>
             <span>Exécuter</span>
@@ -87,32 +101,36 @@ export default function MainLayout() {
 
         <div className="flex items-center gap-3">
           {currentFile && (
-            <div className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded">
-              {currentFile.dirty && <span className="text-yellow-400 mr-1">●</span>}
+            <div className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded flex items-center gap-1">
+              {currentFile.dirty && <Circle size={10} className="text-yellow-400 fill-yellow-400" />}
               {currentFile.path.split('/').pop()}
             </div>
           )}
-          
+
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
               className="p-1 rounded hover:bg-gray-700 transition"
-              title="Basculer la barre latérale"
+              title="Basculer la barre latérale gauche"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="9" y1="3" x2="9" y2="21"></line>
-              </svg>
+              <PanelLeft size={16} />
             </button>
-            
-            <button 
+
+            <button
               onClick={() => setIsExplorerCollapsed(!isExplorerCollapsed)}
               className="p-1 rounded hover:bg-gray-700 transition"
               title="Basculer l'explorateur"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
+              {isExplorerCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+            </button>
+
+            {/* Nouveau bouton pour la sidebar droite */}
+            <button
+              onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
+              className="p-1 rounded hover:bg-gray-700 transition"
+              title="Basculer la barre latérale droite"
+            >
+              <PanelRight size={16} />
             </button>
           </div>
         </div>
@@ -120,26 +138,37 @@ export default function MainLayout() {
 
       {/* Contenu principal amélioré */}
       <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar gauche */}
         {!isSidebarCollapsed && (
-          <Sidebar 
-            onOpenFolder={handleOpenFolder} 
+          <SidebarContainer
             onNewFile={handleNewFile}
-            onSettings={handleSettings}
-          />
-        )}
-
-        {!isExplorerCollapsed && currentFolder && (
-          <FileExplorer
-            folder={currentFolder}
-            onOpenFile={async (filePath) => {
-              const content = await window.api.readFile(filePath);
-              const file = { path: filePath, content, dirty: false };
-              setFiles((f) => [...f.filter((x) => x.path !== filePath), file]);
-              setCurrentFile(file);
+            onOpenFolder={async () => {
+              // tu peux centraliser la logique ici ou laisser container appeler window.api
+              const folder = await window.api.openFolder();
+              if (folder) {
+                setCurrentFolder(folder);
+                setFiles([]);
+                setCurrentFile(null);
+              }
+              return folder;
             }}
           />
         )}
 
+        {/* Explorateur de fichiers */}
+        {!isExplorerCollapsed && currentFolder && (
+          <FileExplorerContainer
+            folder={currentFolder}
+            onOpenFile={(filePath, content) => {
+              const file = { path: filePath, content, dirty: false };
+              setFiles((f) => [...f.filter(x => x.path !== filePath), file]);
+              setCurrentFile(file);
+            }}
+            currentFilePath={currentFile?.path}
+          />
+        )}
+
+        {/* Éditeur principal */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {files.length > 0 && (
             <div className="flex bg-gray-800 border-b border-gray-700 overflow-x-auto">
@@ -147,15 +176,14 @@ export default function MainLayout() {
                 <div
                   key={file.path}
                   onClick={() => setCurrentFile(file)}
-                  className={`flex items-center gap-2 px-3 py-2 text-xs border-r border-gray-700 cursor-pointer transition-colors ${
-                    currentFile?.path === file.path
-                      ? "bg-gray-900 text-white"
-                      : "bg-gray-800 text-gray-400 hover:bg-gray-750"
-                  }`}
+                  className={`flex items-center gap-2 px-3 py-2 text-xs border-r border-gray-700 cursor-pointer transition-colors ${currentFile?.path === file.path
+                    ? "bg-gray-900 text-white"
+                    : "bg-gray-800 text-gray-400 hover:bg-gray-750"
+                    }`}
                 >
                   <span className="truncate max-w-xs">{file.path.split("/").pop()}</span>
-                  {file.dirty && <span className="text-yellow-400">●</span>}
-                  <button 
+                  {file.dirty && <Circle size={10} className="text-yellow-400 fill-yellow-400" />}
+                  <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setFiles(files.filter(f => f.path !== file.path));
@@ -165,57 +193,66 @@ export default function MainLayout() {
                     }}
                     className="text-gray-500 hover:text-red-400 transition-colors"
                   >
-                    ×
+                    <X size={14} />
                   </button>
                 </div>
               ))}
             </div>
           )}
 
-          <EditorTab
+          <EditorTabContainer
             file={currentFile}
-            onChange={(updatedContent) => {
+            onChangeFileContent={(updatedContent) => {
               setCurrentFile((f) => ({
                 ...f,
                 content: updatedContent,
                 dirty: true,
               }));
-              setFiles(files => files.map(f => 
+              setFiles(files => files.map(f =>
                 f.path === currentFile.path ? { ...f, content: updatedContent, dirty: true } : f
               ));
             }}
-            onSave={handleSaveFile}
-            onCursorChange={handleCursorChange}
+            onSaveFile={handleSaveFile}
           />
         </div>
+
+        {/* Sidebar droite (Chat & Terminal) */}
+        {!isRightSidebarCollapsed && <SidebarRight />}
       </div>
 
       {/* Footer amélioré */}
       <footer className="h-6 bg-gray-800 border-t border-gray-700 flex items-center justify-between px-3 text-xs text-gray-400">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+            <Circle size={10} className="text-green-500 fill-green-500" />
             Mode développement
           </span>
-          
+
           <span>{encoding}</span>
-          
+
           <span>{lineEnding}</span>
-          
+
           <span className="flex items-center gap-1">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-            </svg>
+            <Zap size={12} />
             JavaScript
           </span>
         </div>
 
         <div className="flex items-center gap-4">
           <span>Ligne {cursorPosition.line}, Col {cursorPosition.column}</span>
-          
+
           <span>{currentFile ? currentFile.content.split('\n').length : 0} lignes</span>
-          
+
           <span>Espaces: 2</span>
+
+          {/* Indicateur de statut de la sidebar droite */}
+          <button
+            onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
+            className="text-gray-500 hover:text-blue-400 transition-colors flex items-center"
+            title={isRightSidebarCollapsed ? "Afficher la sidebar droite" : "Masquer la sidebar droite"}
+          >
+            {isRightSidebarCollapsed ? <ChevronRight size={12} /> : <ChevronRight size={12} className="rotate-180" />}
+          </button>
         </div>
       </footer>
     </div>
