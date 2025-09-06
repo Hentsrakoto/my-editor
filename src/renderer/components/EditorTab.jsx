@@ -140,19 +140,7 @@ export default function EditorTab({ file, onChange, onSave }) {
         />
         
         {/* Barre d'état en bas */}
-        <div className="absolute bottom-0 left-0 right-0 px-3 py-1.5 bg-gray-800/90 backdrop-blur-sm border-t border-gray-700 text-xs flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="text-green-400 flex items-center">
-              <Database size={12} className="mr-1" />
-              UTF-8
-            </span>
-            <span className="text-purple-400">{language.toUpperCase()}</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-blue-400">Ln 1, Col 1</span>
-            <span className="text-yellow-400">Espaces: 2</span>
-          </div>
-        </div>
+        
       </div>
     </div>
   );
