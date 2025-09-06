@@ -337,7 +337,7 @@ function formatFileSize(bytes) {
 }
 
 // Composant principal
-export default function FileExplorer({ folder, onOpenFile }) {
+export default function FileExplorer({ folder, onOpenFile, currentFile }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [clipboardData, setClipboardData] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -431,36 +431,21 @@ export default function FileExplorer({ folder, onOpenFile }) {
 
   return (
     <div className="w-64 flex flex-col bg-gradient-to-b from-gray-900 to-gray-800 text-gray-400 h-full">
-      <div className="p-2 border-b border-gray-700 bg-gray-800/90">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="font-semibold text-gray-200 text-sm">EXPLORATEUR</h2>
-          <div className="flex gap-1">
-            <button className="p-1 rounded hover:bg-gray-700 transition" title="Nouveau fichier" onClick={handleCreateFile}><FilePlus size={14} /></button>
-            <button className="p-1 rounded hover:bg-gray-700 transition" title="Nouveau dossier" onClick={handleCreateFolder}><FolderPlus size={14} /></button>
-            <button className="p-1 rounded hover:bg-gray-700 transition" title="Actualiser" onClick={handleRefresh}><RefreshCw size={14} /></button>
-          </div>
-        </div>
-
-        <div className="relative">
-          <Search size={14} className="absolute left-2 top-2 text-gray-500" />
-          <input type="text" placeholder="Rechercher..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded pl-8 pr-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
-        </div>
-      </div>
-
       <div className="flex-1 overflow-y-auto p-2">
         <div className="mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider pl-2">Dossier ouvert</div>
 
-        <FolderNode
-          path={folder}
-          name={getNameFromPath(folder)}
-          onOpenFile={onOpenFile}
-          onCreateItem={() => setRefreshTrigger(prev => prev + 1)}
-          clipboardData={clipboardData}
-          onCopy={handleCopy}
-          onCut={handleCut}
-          onPaste={handlePaste}
-          refreshTrigger={refreshTrigger}
-        />
+       <FolderNode
+        path={folder}
+        name={getNameFromPath(folder)}
+        onOpenFile={onOpenFile}
+        onCreateItem={() => setRefreshTrigger(prev => prev + 1)}
+        clipboardData={clipboardData}
+        onCopy={handleCopy}
+        onCut={handleCut}
+        onPaste={handlePaste}
+        refreshTrigger={refreshTrigger}
+        currentFilePath={currentFile?.path} // Nouvelle prop
+      />
       </div>
 
       <div className="p-2 border-t border-gray-700 text-xs text-gray-500 bg-gray-800/50">
