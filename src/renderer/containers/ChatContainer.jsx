@@ -122,7 +122,7 @@ export default function ChatContainer({ contextFiles }) {
             alignItems: "center",
             justifyContent: "center",
             // légère transparence sans altérer le style du container
-            background: "rgba(255,255,255,0.6)",
+            background: "rgba(44, 42, 42, 0.6)",
             backdropFilter: "blur(2px)",
             zIndex: 9999,
             pointerEvents: "none" // important: let underlying container still receive drop
