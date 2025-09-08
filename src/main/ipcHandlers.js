@@ -44,9 +44,111 @@ function setupIPCHandlers() {
     }
   });
 
+  // generic rename (kept for backward compatibility)
   ipcMain.handle('rename', async (_, oldPath, newPath) => {
     try {
+      // protect against accidental overwrite: fail if destination exists
+      try {
+        await fs.access(newPath);
+        return { success: false, error: 'Destination already exists' };
+      } catch (e) {
+        // dest doesn't exist -> ok to rename
+      }
+
       await fs.rename(oldPath, newPath);
+
+      // notify all renderers about rename
+      broadcastFsEvent({ type: 'rename', oldPath, newPath });
+
+      // cleanup watchers that were pointing into oldPath (they must be re-watched by renderer if needed)
+      cleanupWatchersForPath(oldPath);
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  // --- NEW: rename-file (same as rename but explicit) ---
+  ipcMain.handle('rename-file', async (event, oldPath, newPath) => {
+    try {
+      try {
+        await fs.access(newPath);
+        return { success: false, error: 'Destination already exists' };
+      } catch (e) {
+        // destination does not exist
+      }
+
+      await fs.rename(oldPath, newPath);
+
+      // notify caller and other windows
+      event.sender.send('fs-event', { type: 'rename', oldPath, newPath });
+      broadcastFsEvent({ type: 'rename', oldPath, newPath }, event.sender.id);
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  // --- NEW: rename-dir (explicit) ---
+  ipcMain.handle('rename-dir', async (event, oldPath, newPath) => {
+    try {
+      try {
+        await fs.access(newPath);
+        return { success: false, error: 'Destination already exists' };
+      } catch (e) {
+        // destination does not exist
+      }
+
+      await fs.rename(oldPath, newPath);
+
+      // Notify renderer(s)
+      event.sender.send('fs-event', { type: 'rename', oldPath, newPath });
+      broadcastFsEvent({ type: 'rename', oldPath, newPath }, event.sender.id);
+
+      // cleanup watchers that point to oldPath (or subpaths)
+      cleanupWatchersForPath(oldPath);
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  // --- NEW: delete-file ---
+  ipcMain.handle('delete-file', async (event, filePath) => {
+    try {
+      await fs.unlink(filePath);
+
+      // notify the caller and other windows
+      event.sender.send('fs-event', { type: 'unlink', path: filePath });
+      broadcastFsEvent({ type: 'unlink', path: filePath }, event.sender.id);
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  // --- NEW: delete-dir (recursive) ---
+  ipcMain.handle('delete-dir', async (event, dirPath) => {
+    try {
+      // fs.rm with recursive & force (Node 14.14+). If not available, use custom rm logic.
+      if (typeof fs.rm === 'function') {
+        await fs.rm(dirPath, { recursive: true, force: true });
+      } else {
+        // fallback: use rmdir with recursive true (older node)
+        await fs.rmdir(dirPath, { recursive: true });
+      }
+
+      // Close any watchers observing this dir or subpaths
+      cleanupWatchersForPath(dirPath);
+
+      // notify renderer(s)
+      event.sender.send('fs-event', { type: 'unlinkDir', path: dirPath });
+      broadcastFsEvent({ type: 'unlinkDir', path: dirPath }, event.sender.id);
+
       return { success: true };
     } catch (error) {
       return { success: false, error: error.message };
@@ -124,6 +226,56 @@ async function copyDirectory(source, destination) {
       await copyDirectory(sourcePath, destPath);
     } else {
       await fs.copyFile(sourcePath, destPath);
+    }
+  }
+}
+
+/**
+ * Helper: broadcast fs events to all renderer processes (except optionally excludeId)
+ */
+function broadcastFsEvent(payload, excludeId = null) {
+  try {
+    const allWebContents = require('electron').webContents.getAllWebContents();
+    allWebContents.forEach(wc => {
+      if (excludeId && wc.id === excludeId) return;
+      try {
+        wc.send('fs-event', payload);
+      } catch (e) {
+        // ignore
+      }
+    });
+  } catch (e) {
+    // ignore if webContents not available for whatever reason
+  }
+}
+
+/**
+ * Helper: cleanup any watchers that reference a path (exact or children).
+ * If a watchedDir === target OR watchedDir is inside target OR target is inside watchedDir -> remove watcher.
+ */
+function cleanupWatchersForPath(targetPath) {
+  for (const [key, entry] of Array.from(watchers.entries())) {
+    const [, watchedDir] = key.split('::');
+    if (!watchedDir) continue;
+
+    const normalizedWatched = path.resolve(watchedDir);
+    const normalizedTarget = path.resolve(targetPath);
+
+    // Conditions:
+    // - watcher is exactly the target
+    // - watcher is inside the target (watched startsWith target + sep)
+    // - target is inside watcher (target startsWith watched + sep) -> also remove since structure changed
+    if (
+      normalizedWatched === normalizedTarget ||
+      normalizedWatched.startsWith(normalizedTarget + path.sep) ||
+      normalizedTarget.startsWith(normalizedWatched + path.sep)
+    ) {
+      try {
+        entry.cleanup && entry.cleanup();
+      } catch (e) {
+        try { entry.watcher && entry.watcher.close(); } catch (ee) {}
+      }
+      watchers.delete(key);
     }
   }
 }

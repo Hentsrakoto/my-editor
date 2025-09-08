@@ -163,6 +163,7 @@ export default function FolderNode({
           <div className="border-t border-gray-700 my-1"></div>
           <div className="px-3 py-1 hover:bg-gray-700 cursor-pointer" onClick={() => { handleCreate(true); setContextMenu(null); }}>Nouveau fichier</div>
           <div className="px-3 py-1 hover:bg-gray-700 cursor-pointer" onClick={() => { handleCreate(false); setContextMenu(null); }}>Nouveau dossier</div>
+          <div className="px-3 py-1 hover:bg-gray-700 cursor-pointer" onClick={() => { onRenameItem && onRenameItem(contextMenu.itemPath, `${contextMenu.itemPath}_renommé`, contextMenu.isDirectory); setContextMenu(null); }}>Renommer</div>
           <div className="px-3 py-1 hover:bg-gray-700 cursor-pointer text-red-400" onClick={() => { onDeleteItem && onDeleteItem(contextMenu.itemPath, contextMenu.isDirectory); setContextMenu(null); }}>Supprimer</div>
         </div>
       )}

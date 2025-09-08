@@ -202,7 +202,7 @@ export default function MainLayout() {
 
           <EditorTabContainer
             file={currentFile}
-            onChangeFileContent={(updatedContent) => {
+            onChangeFileContent={(updatedContent, fileId) => {
               setCurrentFile((f) => ({
                 ...f,
                 content: updatedContent,
@@ -212,7 +212,21 @@ export default function MainLayout() {
                 f.path === currentFile.path ? { ...f, content: updatedContent, dirty: true } : f
               ));
             }}
-            onSaveFile={handleSaveFile}
+            onSaveFile={(fileId) => {
+              handleSaveFile();
+            }}
+            onCloseFile={(fileId) => {
+              setFiles(files => files.filter(f => f.path !== fileId));
+              if (currentFile?.path === fileId) {
+                setCurrentFile(files.find(f => f.path !== fileId) || null);
+              }
+            }}
+            onSwitchFile={(fileId, content) => {
+              const file = files.find(f => f.path === fileId);
+              if (file) {
+                setCurrentFile(file);
+              }
+            }}
           />
         </div>
 
