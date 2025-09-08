@@ -1,5 +1,6 @@
 // ipcHandlers.js
 const { ipcMain, dialog } = require('electron');
+const { exec } = require('child_process');
 const { FileManager } = require('./fileManager');
 const fs = require('fs').promises;
 const path = require('path');
@@ -210,6 +211,18 @@ function setupIPCHandlers() {
     } catch (e) {}
     watchers.delete(key);
     return { success: true };
+  });
+
+  ipcMain.handle('run-command', async (_, command, cwd) => {
+    return new Promise((resolve) => {
+      exec(command, { cwd }, (error, stdout, stderr) => {
+        if (error) {
+          resolve({ success: false, error: error.message, stdout, stderr });
+          return;
+        }
+        resolve({ success: true, stdout, stderr });
+      });
+    });
   });
 }
 

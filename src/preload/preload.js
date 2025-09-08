@@ -35,5 +35,7 @@ contextBridge.exposeInMainWorld('api', {
       ipcRenderer.removeListener('fs-event', wrapper);
       fsListeners.delete(callback);
     }
-  }
+  },
+
+  runCommand: (cmd, cwd) => ipcRenderer.invoke('run-command', cmd, cwd)
 });

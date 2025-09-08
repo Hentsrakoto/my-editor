@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+[data-panel-resize-handle-id] {
+    width: 4px !important;
+    background-color: #1f2937; /* gray-800 */
+    transition: background-color 0.2s;
+}
+
+[data-panel-resize-handle-id]:hover {
+    background-color: #3b82f6; /* blue-500 */
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.blinking-cursor {
+  animation: blink 1s step-end infinite;
+}

@@ -21,7 +21,7 @@ export default function FileExplorerView({
 }) {
   if (!folder) {
     return (
-      <div className="w-64 flex flex-col bg-gradient-to-b from-gray-900 to-gray-800 text-gray-400 h-full">
+      <div className="w-full flex flex-col bg-gradient-to-b from-gray-900 to-gray-800 text-gray-400 h-full">
         <div className="p-3 border-b border-gray-700 flex items-center justify-between bg-gray-800">
           <h2 className="font-semibold text-gray-200">Explorateur</h2>
         </div>
@@ -35,7 +35,7 @@ export default function FileExplorerView({
   }
 
   return (
-    <div className="w-64 flex flex-col bg-gradient-to-b from-gray-900 to-gray-800 text-gray-400 h-full">
+    <div className="w-full flex flex-col bg-gradient-to-b from-gray-900 to-gray-800 text-gray-400 h-full">
       <div className="flex-1 overflow-y-auto p-2">
         <div className="mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider pl-2">Dossier ouvert</div>
 

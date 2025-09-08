@@ -4,6 +4,11 @@ import FileExplorerContainer from "../containers/FileExplorerContainer";
 import EditorTabContainer from "../containers/EditorTabContainer";
 import SidebarRight from "../components/sidebar/SidebarRight";
 import {
+  Panel,
+  PanelGroup,
+  PanelResizeHandle,
+} from "react-resizable-panels";
+import {
   PanelLeft,
   ChevronDown,
   ChevronRight,
@@ -11,7 +16,7 @@ import {
   Circle,
   Zap,
   Square,
-  PanelRight
+  PanelRight,
 } from "lucide-react";
 
 export default function MainLayout() {
@@ -21,7 +26,7 @@ export default function MainLayout() {
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isExplorerCollapsed, setIsExplorerCollapsed] = useState(false);
-  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
+  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(true);
   const [encoding, setEncoding] = useState("UTF-8");
   const [lineEnding, setLineEnding] = useState("LF");
 
@@ -29,7 +34,7 @@ export default function MainLayout() {
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Ctrl+S pour sauvegarder
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
         if (currentFile) {
           handleSaveFile();
@@ -37,20 +42,20 @@ export default function MainLayout() {
       }
 
       // Ctrl+O pour ouvrir un dossier
-      if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "o") {
         e.preventDefault();
         handleOpenFolder();
       }
 
       // Ctrl+B pour basculer la sidebar droite
-      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "b") {
         e.preventDefault();
         setIsRightSidebarCollapsed(!isRightSidebarCollapsed);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentFile, isRightSidebarCollapsed]);
 
   const handleOpenFolder = async () => {
@@ -66,9 +71,11 @@ export default function MainLayout() {
     if (currentFile) {
       await window.api.writeFile(currentFile.path, currentFile.content);
       setCurrentFile((f) => ({ ...f, dirty: false }));
-      setFiles(files => files.map(f =>
-        f.path === currentFile.path ? { ...f, dirty: false } : f
-      ));
+      setFiles((files) =>
+        files.map((f) =>
+          f.path === currentFile.path ? { ...f, dirty: false } : f
+        )
+      );
     }
   };
 
@@ -77,8 +84,14 @@ export default function MainLayout() {
   };
 
   const handleNewFile = () => {
-    const newFilePath = currentFolder ? `${currentFolder}/nouveau-fichier.js` : 'nouveau-fichier.js';
-    const newFile = { path: newFilePath, content: '// Nouveau fichier', dirty: true };
+    const newFilePath = currentFolder
+      ? `${currentFolder}/nouveau-fichier.js` 
+      : "nouveau-fichier.js";
+    const newFile = {
+      path: newFilePath,
+      content: "// Nouveau fichier",
+      dirty: true,
+    };
     setFiles((f) => [...f, newFile]);
     setCurrentFile(newFile);
   };
@@ -102,8 +115,10 @@ export default function MainLayout() {
         <div className="flex items-center gap-3">
           {currentFile && (
             <div className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded flex items-center gap-1">
-              {currentFile.dirty && <Circle size={10} className="text-yellow-400 fill-yellow-400" />}
-              {currentFile.path.split('/').pop()}
+              {currentFile.dirty && (
+                <Circle size={10} className="text-yellow-400 fill-yellow-400" />
+              )}
+              {currentFile.path.split("/").pop()}
             </div>
           )}
 
@@ -121,12 +136,18 @@ export default function MainLayout() {
               className="p-1 rounded hover:bg-gray-700 transition"
               title="Basculer l'explorateur"
             >
-              {isExplorerCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+              {isExplorerCollapsed ? (
+                <ChevronRight size={16} />
+              ) : (
+                <ChevronDown size={16} />
+              )}
             </button>
 
             {/* Nouveau bouton pour la sidebar droite */}
             <button
-              onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
+              onClick={() =>
+                setIsRightSidebarCollapsed(!isRightSidebarCollapsed)
+              }
               className="p-1 rounded hover:bg-gray-700 transition"
               title="Basculer la barre latérale droite"
             >
@@ -136,104 +157,73 @@ export default function MainLayout() {
         </div>
       </header>
 
-      {/* Contenu principal amélioré */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar gauche */}
-        {!isSidebarCollapsed && (
-          <SidebarContainer
-            onNewFile={handleNewFile}
-            onOpenFolder={async () => {
-              // tu peux centraliser la logique ici ou laisser container appeler window.api
-              const folder = await window.api.openFolder();
-              if (folder) {
-                setCurrentFolder(folder);
-                setFiles([]);
-                setCurrentFile(null);
-              }
-              return folder;
-            }}
-          />
+      <PanelGroup direction="horizontal" className="flex-1">
+        <Panel defaultSize={80} minSize={30}>
+          <PanelGroup direction="horizontal">
+            {!isSidebarCollapsed && (
+              <Panel defaultSize={6.25} minSize={5} maxSize={15}>
+                <SidebarContainer
+                  onNewFile={handleNewFile}
+                  onOpenFolder={async () => {
+                    const folder = await window.api.openFolder();
+                    if (folder) {
+                      setCurrentFolder(folder);
+                      setFiles([]);
+                      setCurrentFile(null);
+                    }
+                    return folder;
+                  }}
+                />
+              </Panel>
+            )}
+            {!isSidebarCollapsed && <PanelResizeHandle />} 
+
+            {!isExplorerCollapsed && currentFolder && (
+              <Panel defaultSize={18.75} minSize={10}>
+                <FileExplorerContainer
+                  folder={currentFolder}
+                  onOpenFile={(filePath, content) => {
+                    const file = { path: filePath, content, dirty: false };
+                    setFiles((f) => [...f.filter((x) => x.path !== filePath), file]);
+                    setCurrentFile(file);
+                  }}
+                  currentFilePath={currentFile?.path}
+                />
+              </Panel>
+            )}
+            {!isExplorerCollapsed && currentFolder && <PanelResizeHandle />}
+
+            <Panel defaultSize={75} minSize={20}>
+              <EditorTabContainer
+                file={currentFile}
+                onChangeFileContent={(updatedContent, fileId) => {
+                  setCurrentFile((f) => ({ ...f, content: updatedContent, dirty: true }));
+                  setFiles(files.map(f => f.path === currentFile.path ? { ...f, content: updatedContent, dirty: true } : f));
+                }}
+                onSaveFile={handleSaveFile}
+                onCloseFile={(fileId) => {
+                  setFiles(files => files.filter(f => f.path !== fileId));
+                  if (currentFile?.path === fileId) {
+                    setCurrentFile(files.find(f => f.path !== fileId) || null);
+                  }
+                }}
+                onSwitchFile={(fileId) => {
+                  const file = files.find(f => f.path === fileId);
+                  if (file) setCurrentFile(file);
+                }}
+              />
+            </Panel>
+          </PanelGroup>
+        </Panel>
+
+        {!isRightSidebarCollapsed && <PanelResizeHandle />}
+
+        {!isRightSidebarCollapsed && (
+          <Panel defaultSize={20} minSize={15} maxSize={50}>
+            <SidebarRight currentFolder={currentFolder} />
+          </Panel>
         )}
-
-        {/* Explorateur de fichiers */}
-        {!isExplorerCollapsed && currentFolder && (
-          <FileExplorerContainer
-            folder={currentFolder}
-            onOpenFile={(filePath, content) => {
-              const file = { path: filePath, content, dirty: false };
-              setFiles((f) => [...f.filter(x => x.path !== filePath), file]);
-              setCurrentFile(file);
-            }}
-            currentFilePath={currentFile?.path}
-          />
-        )}
-
-        {/* Éditeur principal */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {files.length > 0 && (
-            <div className="flex bg-gray-800 border-b border-gray-700 overflow-x-auto">
-              {files.map((file) => (
-                <div
-                  key={file.path}
-                  onClick={() => setCurrentFile(file)}
-                  className={`flex items-center gap-2 px-3 py-2 text-xs border-r border-gray-700 cursor-pointer transition-colors ${currentFile?.path === file.path
-                    ? "bg-gray-900 text-white"
-                    : "bg-gray-800 text-gray-400 hover:bg-gray-750"
-                    }`}
-                >
-                  <span className="truncate max-w-xs">{file.path.split("/").pop()}</span>
-                  {file.dirty && <Circle size={10} className="text-yellow-400 fill-yellow-400" />}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFiles(files.filter(f => f.path !== file.path));
-                      if (currentFile?.path === file.path) {
-                        setCurrentFile(files.find(f => f.path !== file.path) || null);
-                      }
-                    }}
-                    className="text-gray-500 hover:text-red-400 transition-colors"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <EditorTabContainer
-            file={currentFile}
-            onChangeFileContent={(updatedContent, fileId) => {
-              setCurrentFile((f) => ({
-                ...f,
-                content: updatedContent,
-                dirty: true,
-              }));
-              setFiles(files => files.map(f =>
-                f.path === currentFile.path ? { ...f, content: updatedContent, dirty: true } : f
-              ));
-            }}
-            onSaveFile={(fileId) => {
-              handleSaveFile();
-            }}
-            onCloseFile={(fileId) => {
-              setFiles(files => files.filter(f => f.path !== fileId));
-              if (currentFile?.path === fileId) {
-                setCurrentFile(files.find(f => f.path !== fileId) || null);
-              }
-            }}
-            onSwitchFile={(fileId, content) => {
-              const file = files.find(f => f.path === fileId);
-              if (file) {
-                setCurrentFile(file);
-              }
-            }}
-          />
-        </div>
-
-        {/* Sidebar droite (Chat & Terminal) */}
-        {!isRightSidebarCollapsed && <SidebarRight />}
-      </div>
-
+      </PanelGroup>
       {/* Footer amélioré */}
       <footer className="h-6 bg-gray-800 border-t border-gray-700 flex items-center justify-between px-3 text-xs text-gray-400">
         <div className="flex items-center gap-4">
@@ -253,19 +243,33 @@ export default function MainLayout() {
         </div>
 
         <div className="flex items-center gap-4">
-          <span>Ligne {cursorPosition.line}, Col {cursorPosition.column}</span>
+          <span>
+            Ligne {cursorPosition.line}, Col {cursorPosition.column}
+          </span>
 
-          <span>{currentFile ? currentFile.content.split('\n').length : 0} lignes</span>
+          <span>
+            {currentFile ? currentFile.content.split("\n").length : 0} lignes
+          </span>
 
           <span>Espaces: 2</span>
 
           {/* Indicateur de statut de la sidebar droite */}
           <button
-            onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
+            onClick={() =>
+              setIsRightSidebarCollapsed(!isRightSidebarCollapsed)
+            }
             className="text-gray-500 hover:text-blue-400 transition-colors flex items-center"
-            title={isRightSidebarCollapsed ? "Afficher la sidebar droite" : "Masquer la sidebar droite"}
+            title={
+              isRightSidebarCollapsed
+                ? "Afficher la sidebar droite"
+                : "Masquer la sidebar droite"
+            }
           >
-            {isRightSidebarCollapsed ? <ChevronRight size={12} /> : <ChevronRight size={12} className="rotate-180" />}
+            {isRightSidebarCollapsed ? (
+              <ChevronRight size={12} />
+            ) : (
+              <ChevronRight size={12} className="rotate-180" />
+            )}
           </button>
         </div>
       </footer>

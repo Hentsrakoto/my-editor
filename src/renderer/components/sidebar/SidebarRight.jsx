@@ -3,11 +3,11 @@ import { MessageSquare, Terminal } from "lucide-react";
 import ChatContainer from "../../containers/ChatContainer";
 import TerminalContainer from "../../containers/TerminalContainer";
 
-const SidebarRight = ({ contextFiles }) => {
+const SidebarRight = ({ currentFolder }) => {
   const [activeTab, setActiveTab] = useState("chat");
 
   return (
-    <div className="w-80 flex flex-col bg-gradient-to-b from-gray-900 to-gray-800 h-full border-l border-gray-700">
+    <div className="w-full flex flex-col bg-gradient-to-b from-gray-900 to-gray-800 h-full border-l border-gray-700">
       <div className="flex border-b border-gray-700 bg-gray-800/90">
         <button
           className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors duration-150 ${
@@ -34,7 +34,7 @@ const SidebarRight = ({ contextFiles }) => {
       </div>
 
       <div className="flex-1 overflow-hidden">
-        {activeTab === "chat" ? <ChatContainer contextFiles={contextFiles} /> : <TerminalContainer />}
+        {activeTab === "chat" ? <ChatContainer contextFiles={currentFolder} /> : <TerminalContainer cwd={currentFolder} />}
       </div>
     </div>
   );

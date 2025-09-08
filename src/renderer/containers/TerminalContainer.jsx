@@ -2,32 +2,33 @@ import React, { useCallback } from "react";
 import TerminalView from "../components/terminal/TerminalView";
 import useTerminal from "../hooks/useTerminal";
 
-export default function TerminalContainer() {
+export default function TerminalContainer({ cwd }) {
 
   const runCommandHandler = useCallback(async (cmd) => {
-    // Electron IPC pattern recommended:
-    if (window?.api?.runCommand) {
-      // returns array or string
-      return await window.api.runCommand(cmd);
-    }
-    // Fallback: simulate or call backend endpoint
-    // Example: call /api/terminal (server executes safe script) -> must be sandboxed!
     try {
-      const res = await fetch("/api/terminal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cmd })
-      });
-      const data = await res.json();
-      return data?.output || [`Command executed: ${cmd}`];
+      if (window?.api?.runCommand) {
+        const result = await window.api.runCommand(cmd, cwd);
+        return {
+          success: result.success,
+          output: (result.success ? result.stdout : (result.stderr || result.error)).split('\n')
+        };
+      }
+      
+      // Fallback if IPC is not available
+      return {
+        success: false,
+        output: ["Error: window.api.runCommand is not available."]
+      };
+
     } catch (err) {
-      // fallback simulation handled by useTerminal
-      console.warn("TerminalContainer runCommandHandler fallback", err);
-      throw err;
+      return {
+        success: false,
+        output: [`Terminal Error: ${err.message || err}`]
+      };
     }
-  }, []);
+  }, [cwd]);
 
   const { lines, run, push, clear } = useTerminal({ runCommandHandler });
 
-  return <TerminalView lines={lines} onRun={run} onClear={clear} />;
+  return <TerminalView lines={lines} onRun={run} onClear={clear} cwd={cwd} />;
 }
