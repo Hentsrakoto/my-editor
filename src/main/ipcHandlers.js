@@ -224,6 +224,46 @@ function setupIPCHandlers() {
       });
     });
   });
+
+  ipcMain.handle('search-in-files', async (_, { query, directory }) => {
+    if (!query || !directory) return [];
+    const results = [];
+    const ignoreDirs = new Set(['.git', 'node_modules', 'dist', 'build']);
+    const ignoreExts = new Set(['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico', '.pdf', '.zip', '.rar', '.exe', '.dll']);
+
+    async function search(dir) {
+      try {
+        const entries = await fs.readdir(dir, { withFileTypes: true });
+        for (const entry of entries) {
+          const fullPath = path.join(dir, entry.name);
+          if (entry.isDirectory() && !ignoreDirs.has(entry.name)) {
+            await search(fullPath);
+          } else if (entry.isFile() && !ignoreExts.has(path.extname(entry.name).toLowerCase())) {
+            try {
+              const content = await fs.readFile(fullPath, 'utf-8');
+              const lines = content.split('\n');
+              lines.forEach((line, index) => {
+                if (line.toLowerCase().includes(query.toLowerCase())) {
+                  results.push({
+                    filePath: fullPath,
+                    lineNumber: index + 1,
+                    lineContent: line.trim(),
+                  });
+                }
+              });
+            } catch (e) {
+              // Ignore file read errors (e.g. binary files)
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore directory read errors
+      }
+    }
+
+    await search(directory);
+    return results;
+  });
 }
 
 // util copy dir

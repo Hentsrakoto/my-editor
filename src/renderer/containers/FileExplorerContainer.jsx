@@ -59,6 +59,10 @@ export default function FileExplorerContainer({ folder, onOpenFile, currentFileP
    */
   const handleDelete = useCallback(async (pathToDelete, isDir = false) => {
     const p = normalizePath(pathToDelete);
+    const name = p.split('/').pop();
+    const confirmation = window.confirm(`Êtes-vous sûr de vouloir supprimer "${name}" ?`);
+    if (!confirmation) return;
+
     try {
       if (window?.api?.invoke) {
         // prefer explicit handler

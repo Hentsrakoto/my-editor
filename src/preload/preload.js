@@ -37,5 +37,7 @@ contextBridge.exposeInMainWorld('api', {
     }
   },
 
-  runCommand: (cmd, cwd) => ipcRenderer.invoke('run-command', cmd, cwd)
+  runCommand: (cmd, cwd) => ipcRenderer.invoke('run-command', cmd, cwd),
+
+  searchInFiles: (query, directory) => ipcRenderer.invoke('search-in-files', { query, directory })
 });

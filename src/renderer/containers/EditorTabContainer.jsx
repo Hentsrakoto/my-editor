@@ -5,9 +5,9 @@ import EditorStatusBar from "../components/Editor/EditorStatusBar";
 import useLanguageFromPath from "../hooks/useLanguageFromPath";
 import useFontSize from "../hooks/useFontSize";
 
-export default function EditorTabContainer({ 
-  file, 
-  onChangeFileContent, 
+export default function EditorTabContainer({
+  file,
+  onChangeFileContent,
   onSaveFile,
   onCloseFile,
   onSwitchFile
@@ -25,11 +25,11 @@ export default function EditorTabContainer({
   const [length, setLength] = useState(file?.content?.length || 0);
 
   // Multi-tab state
-  const [openFiles, setOpenFiles] = useState(file ? [{ 
-    id: file.path, 
-    path: file.path, 
-    content: file.content || "", 
-    dirty: !!file.dirty 
+  const [openFiles, setOpenFiles] = useState(file ? [{
+    id: file.path,
+    path: file.path,
+    content: file.content || "",
+    dirty: !!file.dirty
   }] : []);
   const [activeFileId, setActiveFileId] = useState(file?.path || null);
 
@@ -40,23 +40,24 @@ export default function EditorTabContainer({
   // Sync incoming prop `file`
   useEffect(() => {
     if (!file || !file.path) return;
-    
+
     const id = file.path;
     setOpenFiles((prev) => {
       const exists = prev.find((f) => f.id === id);
       if (exists) {
-        return prev.map((f) => 
+        return prev.map((f)
+        =>
           f.id === id ? { ...f, content: file.content, dirty: !!file.dirty } : f
         );
       }
-      return [...prev, { 
-        id, 
-        path: file.path, 
-        content: file.content || "", 
-        dirty: !!file.dirty 
+      return [...prev, {
+        id,
+        path: file.path,
+        content: file.content || "",
+        dirty: !!file.dirty
       }];
     });
-    
+
     if (!activeFileId) {
       setActiveFileId(id);
     }
@@ -97,8 +98,10 @@ export default function EditorTabContainer({
   // change handler
   const handleChange = useCallback((value) => {
     if (activeFileId) {
-      setOpenFiles((prev) => 
-        prev.map((f) => 
+      setOpenFiles((prev)
+      =>
+        prev.map((f)
+        =>
           f.id === activeFileId ? { ...f, content: value, dirty: true } : f
         )
       );
@@ -110,8 +113,10 @@ export default function EditorTabContainer({
   const handleSave = useCallback(() => {
     if (activeFileId) {
       onSaveFile?.(activeFileId);
-      setOpenFiles((prev) => 
-        prev.map((f) => 
+      setOpenFiles((prev)
+      =>
+        prev.map((f)
+        =>
           f.id === activeFileId ? { ...f, dirty: false } : f
         )
       );
@@ -131,13 +136,13 @@ export default function EditorTabContainer({
   const closeFile = useCallback((id) => {
     setOpenFiles((prev) => {
       const newFiles = prev.filter((f) => f.id !== id);
-      
+
       if (id === activeFileId) {
         const remainingIds = newFiles.map(f => f.id);
         const newActiveId = remainingIds.length > 0 ? remainingIds[0] : null;
-        
+
         setActiveFileId(newActiveId);
-        
+
         if (newActiveId) {
           const newActiveFile = newFiles.find(f => f.id === newActiveId);
           onSwitchFile?.(newActiveId, newActiveFile.content);
@@ -145,10 +150,10 @@ export default function EditorTabContainer({
           onCloseFile?.(id);
         }
       }
-      
+
       return newFiles;
     });
-    
+
     onCloseFile?.(id);
   }, [activeFileId, onCloseFile, onSwitchFile]);
 
@@ -181,16 +186,16 @@ export default function EditorTabContainer({
     const newContent = activeFile?.content ?? "";
 
     if (!editor || !activeFile) return;
-    
+
     const model = editor.getModel();
     if (!model) return;
 
     if (model.getValue() !== newContent) {
       const prevPos = editor.getPosition?.() || null;
       const prevSelection = editor.getSelection?.() || null;
-      
+
       model.setValue(newContent);
-      
+
       if (prevPos) {
         editor.setPosition(prevPos);
         editor.revealPositionInCenter(prevPos);
@@ -243,10 +248,10 @@ export default function EditorTabContainer({
         onMount={handleMount}
       />
 
-      <EditorStatusBar 
-        line={cursor.line} 
-        column={cursor.column} 
-        length={length} 
+      <EditorStatusBar
+        line={cursor.line}
+        column={cursor.column}
+        length={length}
       />
     </div>
   );

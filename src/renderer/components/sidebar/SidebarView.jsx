@@ -1,6 +1,6 @@
 import React from "react";
 import SidebarButton from "./SidebarButton";
-import { FolderOpen, FileText, Palette, Github, HelpCircle } from "lucide-react";
+import { FolderOpen, FileText, Palette, Github, HelpCircle, Search } from "lucide-react";
 
 /**
  * SidebarView (presentational)
@@ -10,6 +10,7 @@ export default function SidebarView({
   activeButton,
   onOpenFolder,
   onNewFile,
+  onToggleSearch,
   onToggleTheme,
   onSettings,
   onOpenGithub,
@@ -23,6 +24,7 @@ export default function SidebarView({
         <div className="flex flex-col gap-4">
           <SidebarButton Icon={FolderOpen} label="Ouvrir" active={activeButton === "open"} onClick={onOpenFolder} />
           <SidebarButton Icon={FileText} label="Nouveau" active={activeButton === "new"} onClick={onNewFile} />
+          <SidebarButton Icon={Search} label="Chercher" active={activeButton === "search"} onClick={onToggleSearch} />
         </div>
 
         <div className="w-8 h-px bg-gray-700 my-2"></div>

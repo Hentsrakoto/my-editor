@@ -8,7 +8,7 @@ import useTheme from "../hooks/useTheme";
  * - injectable handlers for testability
  * - uses window.api when available (Electron IPC)
  */
-export default function SidebarContainer({ onNewFile, onOpenFolder }) {
+export default function SidebarContainer({ onNewFile, onOpenFolder, onToggleSearch }) {
   const { activeButton, recentFolders, handleOpenFolder, handleNewFile, clearRecent, setRecentFolders } = useSidebarActions({
     onNewFile,
     onOpenFolderExternal: async () => {
@@ -44,6 +44,7 @@ export default function SidebarContainer({ onNewFile, onOpenFolder }) {
       activeButton={activeButton}
       onOpenFolder={handleOpenFolder}
       onNewFile={handleNewFile}
+      onToggleSearch={onToggleSearch}
       onToggleTheme={toggle}
       onSettings={() => console.log("Open settings")}
       onOpenGithub={openGithub}
