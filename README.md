@@ -1,4 +1,4 @@
-# MonEditeur — Éditeur de texte / code personnalisé (React + Electron + Monaco)
+# 📘 MonEditeur — Éditeur de texte / code personnalisé (React + Electron + Monaco)
 
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js->=18-brightgreen)](https://nodejs.org/)
@@ -8,14 +8,14 @@
 
 ---
 
-## Description
+## 📝Description
 
 **MonEditeur** est un éditeur de texte / code minimal et extensible construit avec **React**, **Electron** et **Monaco Editor**.  
 L'objectif : proposer une base légère, performante et facile à étendre, avec un explorateur de fichiers réactif (lazy loading) et une stratégie de surveillance des dossiers proche de VSCode (watchers par dossier ouvert).
 
 ---
 
-## Démarrage rapide
+## 🚀Démarrage rapide
 
 1. **Cloner le dépôt :**
    ```bash
@@ -60,7 +60,7 @@ L'objectif : proposer une base légère, performante et facile à étendre, avec
 
 ---
 
-## Structure du projet
+## 📂Structure du projet
 
 ```
 .gitignore
@@ -93,7 +93,7 @@ src/
 
 ---
 
-## Fonctionnement principal
+## ⚙️Fonctionnement principal
 
 ### Lazy loading + Watchers dynamiques (façon VSCode)
 
@@ -101,7 +101,7 @@ src/
 - **Watchers par dossier ouvert** : le renderer demande au main process de démarrer un watcher `chokidar` sur le dossier ouvert (profondeur 0).  
   Quand le dossier est replié, le watcher est arrêté.
 
-Les événements (`add`, `addDir`, `unlink`, `unlinkDir`, `change`) sont envoyés au renderer via IPC (`fs-event`) et traités de façon incrémentale.
+- **IPC** : main <-> renderer pour propager les événements FS
 
 ---
 
@@ -116,23 +116,22 @@ Les événements (`add`, `addDir`, `unlink`, `unlinkDir`, `change`) sont envoyé
 
 ---
 
-## Avantages
+## ✅Avantages
 
 - **Rapidité au lancement** : pas de scan massif au démarrage.
 - **Scalabilité** : fonctionne sur de gros projets.
 - **Réactivité** : mises à jour incrémentales.
 - **Contrôle fin** : watchers uniquement sur les dossiers ouverts.
 
-## Limites
+## ⚠️Limites
 
-- Latence à l'ouverture d'un dossier (I/O).
 - Cohérence partielle : modifications dans les dossiers fermés non connues.
 - Multiplication des watchers si beaucoup de dossiers ouverts.
 - Pas de fonctionnalités IDE avancées par défaut.
 
 ---
 
-## Conseils & optimisations
+## 🔧Conseils & optimisations
 
 - Ignorer `node_modules`, `.git`, `dist` dans `chokidar`.
 - Utiliser `awaitWriteFinish` pour éviter les doublons d'événements.
@@ -142,45 +141,9 @@ Les événements (`add`, `addDir`, `unlink`, `unlinkDir`, `change`) sont envoyé
 
 ---
 
-## Intégration Monaco — rechargement d’un fichier modifié à l’extérieur
-
-```js
-// Pseudo-code
-useEffect(() => {
-  const handleFs = (ev) => {
-    if (!ev || !ev.path) return;
-    if (normalize(ev.path) === normalize(openedFilePath) && ev.type === 'change') {
-      window.api.readFile(openedFilePath).then(content => {
-        if (content !== monacoModel.getValue()) {
-          monacoModel.setValue(content);
-        }
-      });
-    }
-  };
-  window.api.onFsEvent(handleFs);
-  return () => window.api.offFsEvent(handleFs);
-}, [openedFilePath, monacoModel]);
-```
-
 ---
 
-## Dépannage courant
-
-- **Cannot find module 'tailwindcss'** :  
-  Installer les dépendances PostCSS/Tailwind :  
-  ```bash
-  npm i -D tailwindcss postcss autoprefixer
-  ```
-- **Pas d'événements `fs-event` reçus** :  
-  Vérifier que `setupIPCHandlers()` est appelé dans `main.js` et que `preload.js` est bien référencé.
-- **Doublons d'événements** :  
-  Vérifier qu’on n’inscrit pas plusieurs fois le même handler et que `offFsEvent` est bien appelé.
-- **Limite de watchers / ERREUR inotify** :  
-  Augmenter `fs.inotify.max_user_watches` (Linux) ou réduire le nombre de dossiers observés.
-
----
-
-## Roadmap & améliorations possibles
+## 📌Roadmap & améliorations possibles
 
 - Indexation persistante pour recherche instantanée.
 - Watch-file dédié sur le fichier ouvert.
@@ -191,7 +154,7 @@ useEffect(() => {
 
 ---
 
-## Contribution
+## 🤝Contribution
 
 - Fork → Branche feature → PR.
 - Suivre les conventions du projet (lint, format).
