@@ -45,8 +45,7 @@ export default function EditorTabContainer({
     setOpenFiles((prev) => {
       const exists = prev.find((f) => f.id === id);
       if (exists) {
-        return prev.map((f)
-        =>
+        return prev.map((f)=>
           f.id === id ? { ...f, content: file.content, dirty: !!file.dirty } : f
         );
       }
@@ -98,10 +97,8 @@ export default function EditorTabContainer({
   // change handler
   const handleChange = useCallback((value) => {
     if (activeFileId) {
-      setOpenFiles((prev)
-      =>
-        prev.map((f)
-        =>
+      setOpenFiles((prev)=>
+        prev.map((f)=>
           f.id === activeFileId ? { ...f, content: value, dirty: true } : f
         )
       );
@@ -113,10 +110,8 @@ export default function EditorTabContainer({
   const handleSave = useCallback(() => {
     if (activeFileId) {
       onSaveFile?.(activeFileId);
-      setOpenFiles((prev)
-      =>
-        prev.map((f)
-        =>
+      setOpenFiles((prev)=>
+        prev.map((f)=>
           f.id === activeFileId ? { ...f, dirty: false } : f
         )
       );
